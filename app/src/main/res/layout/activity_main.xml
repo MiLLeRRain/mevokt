@@ -1,17 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:mapbox="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <com.mapbox.maps.MapView xmlns:mapbox="http://schemas.android.com/apk/res-auto"
-        android:id="@+id/mapView"
+    <Button
+        android:id="@+id/vehiclesBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="600dp"
+        android:layout_marginEnd="250dp"
+        android:backgroundTint="#00afdd"
+        android:text="Vehicles"
+        mapbox:layout_constraintBottom_toBottomOf="parent"
+        mapbox:layout_constraintEnd_toEndOf="parent"
+        mapbox:layout_constraintStart_toStartOf="parent"
+        mapbox:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/parkingBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="600dp"
+        android:backgroundTint="#00afdd"
+        android:text="Parking"
+        mapbox:layout_constraintBottom_toBottomOf="parent"
+        mapbox:layout_constraintStart_toEndOf="@+id/vehiclesBtn"
+        mapbox:layout_constraintTop_toTopOf="parent" />
+
+    <com.mapbox.maps.MapView
+        android:id="@+id/mapViewPanel"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:backgroundTint="#039BE5"
         mapbox:mapbox_cameraTargetLat="-41.276825"
         mapbox:mapbox_cameraTargetLng="174.777969"
-        mapbox:mapbox_cameraZoom="9.0"
-        />
+        mapbox:mapbox_cameraZoom="9.0">
+
+    </com.mapbox.maps.MapView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

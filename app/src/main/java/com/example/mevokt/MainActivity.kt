@@ -1,6 +1,8 @@
 package com.example.mevokt
 
 import android.os.Bundle
+import android.view.View
+import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
@@ -19,8 +21,10 @@ import com.mapbox.maps.plugin.locationcomponent.location
 
 import java.lang.ref.WeakReference
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var locationPermissionHelper: LocationPermissionHelper
+    private val VEHICLES_URL : String = "https://api.mevo.co.nz/public/vehicles/wellington"
+    private val PARKING_URL : String = "https://api.mevo.co.nz/public/parking/wellington"
 
     private val onIndicatorBearingChangedListener = OnIndicatorBearingChangedListener {
         mapView.getMapboxMap().setCamera(CameraOptions.Builder().bearing(it).build())
@@ -44,14 +48,20 @@ class MainActivity : AppCompatActivity() {
     }
     private lateinit var mapView: MapView
 
+    private lateinit var vehiclesBtn : Button
+    private lateinit var parkingBtn : Button
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mapView = MapView(this)
-        setContentView(mapView)
+
+        setContentView(R.layout.activity_main)
+        mapView = findViewById(R.id.mapViewPanel)
         locationPermissionHelper = LocationPermissionHelper(WeakReference(this))
         locationPermissionHelper.checkPermissions {
             onMapReady()
         }
+        vehiclesBtn = findViewById(R.id.vehiclesBtn)
+        parkingBtn = findViewById(R.id.parkingBtn)
     }
 
     private fun onMapReady() {
@@ -128,5 +138,14 @@ class MainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         locationPermissionHelper.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+    override fun onClick(v: View?) {
+        if (v != null) {
+            when (v.id) {
+                vehiclesBtn.id -> Toast.makeText(this@MainActivity, "button 1", Toast.LENGTH_SHORT).show()
+                parkingBtn.id -> Toast.makeText(this@MainActivity, "button 2", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }
