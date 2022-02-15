@@ -1,19 +1,26 @@
 package com.example.mevokt
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
-import com.example.mevokt.utils.GeojsonFetcher
+import androidx.core.content.ContextCompat
+import com.example.mevokt.utils.GeoJsonFetcher
 import com.example.mevokt.utils.LocationPermissionHelper
 import com.mapbox.android.gestures.MoveGestureDetector
-import com.mapbox.geojson.GeoJson
+import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
-import com.mapbox.maps.Style
 import com.mapbox.maps.extension.style.expressions.dsl.generated.interpolate
+import com.mapbox.maps.extension.style.layers.addLayer
+import com.mapbox.maps.extension.style.layers.generated.FillLayer
+import com.mapbox.maps.extension.style.layers.generated.lineLayer
+import com.mapbox.maps.extension.style.layers.getLayerAs
+import com.mapbox.maps.extension.style.sources.addSource
+import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
 import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.gestures.OnMoveListener
 import com.mapbox.maps.plugin.gestures.gestures
@@ -21,7 +28,6 @@ import com.mapbox.maps.plugin.locationcomponent.OnIndicatorBearingChangedListene
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
 import com.mapbox.maps.plugin.locationcomponent.location
 import kotlinx.coroutines.*
-
 import java.lang.ref.WeakReference
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
@@ -31,7 +37,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     private lateinit var vehiclesBtn : Button
     private lateinit var parkingBtn : Button
-    private val vehiclesFetcher : GeojsonFetcher = GeojsonFetcher()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,7 +52,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun vehiclesFetch() {
-        var geojson : GeoJson
+        var vehiclesFetcher = GeoJsonFetcher()
+        var geojson : GeoJsonSource
         val fetchJob = Job()
         val errorHandler = CoroutineExceptionHandler {
             coroutineContext, throwable ->
@@ -56,7 +63,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         val scope = CoroutineScope(fetchJob + Dispatchers.Main)
         scope.launch(errorHandler) {
             geojson = vehiclesFetcher.getVehicles()
-            print(geojson)
+            Log.i("source", geojson.toString())
         }
         Toast.makeText(this@MainActivity, "Show Vehicles", Toast.LENGTH_SHORT).show()
     }
@@ -170,8 +177,34 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         if (v != null) {
             when (v.id) {
                 vehiclesBtn.id -> vehiclesFetch()
-                parkingBtn.id -> Toast.makeText(this@MainActivity, "Show Parking", Toast.LENGTH_SHORT).show()
+                parkingBtn.id -> parkingFetch()
             }
         }
+    }
+
+    private fun parkingFetch() {
+        mapView.getMapboxMap().getStyle { style ->
+
+
+            // Specify a unique string as the source ID (SOURCE_ID)
+            // and reference the location of source data
+            style.addSource(geoJsonSource("parkingArea") {
+                url("https://api.mevo.co.nz/public/parking/wellington")
+            })
+            // Specify a unique string as the layer ID (LAYER_ID)
+            // and reference the source ID (SOURCE_ID) added above.
+            style.addLayer(lineLayer("parkingLayer", "parkingArea") {
+                lineColor(ContextCompat.getColor(this@MainActivity, R.color.black))
+                lineWidth(3.0)
+                lineOpacity(0.5)
+            })
+
+
+            // Get an existing layer by referencing its
+            // unique layer ID (LAYER_ID)
+            // Update layer properties
+            style.getLayerAs<FillLayer>("parkingLayer")?.fillOpacity(0.5)
+        }
+        Toast.makeText(this@MainActivity, "Show Parking", Toast.LENGTH_SHORT).show()
     }
 }
