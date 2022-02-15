@@ -6,8 +6,10 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
+import com.example.mevokt.utils.GeojsonFetcher
 import com.example.mevokt.utils.LocationPermissionHelper
 import com.mapbox.android.gestures.MoveGestureDetector
+import com.mapbox.geojson.GeoJson
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
 import com.mapbox.maps.Style
@@ -18,38 +20,18 @@ import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorBearingChangedListener
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
 import com.mapbox.maps.plugin.locationcomponent.location
+import kotlinx.coroutines.*
 
 import java.lang.ref.WeakReference
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var locationPermissionHelper: LocationPermissionHelper
-    private val VEHICLES_URL : String = "https://api.mevo.co.nz/public/vehicles/wellington"
-    private val PARKING_URL : String = "https://api.mevo.co.nz/public/parking/wellington"
 
-    private val onIndicatorBearingChangedListener = OnIndicatorBearingChangedListener {
-        mapView.getMapboxMap().setCamera(CameraOptions.Builder().bearing(it).build())
-    }
-
-    private val onIndicatorPositionChangedListener = OnIndicatorPositionChangedListener {
-        mapView.getMapboxMap().setCamera(CameraOptions.Builder().center(it).build())
-        mapView.gestures.focalPoint = mapView.getMapboxMap().pixelForCoordinate(it)
-    }
-
-    private val onMoveListener = object : OnMoveListener {
-        override fun onMoveBegin(detector: MoveGestureDetector) {
-            onCameraTrackingDismissed()
-        }
-
-        override fun onMove(detector: MoveGestureDetector): Boolean {
-            return false
-        }
-
-        override fun onMoveEnd(detector: MoveGestureDetector) {}
-    }
     private lateinit var mapView: MapView
 
     private lateinit var vehiclesBtn : Button
     private lateinit var parkingBtn : Button
+    private val vehiclesFetcher : GeojsonFetcher = GeojsonFetcher()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,10 +42,33 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         locationPermissionHelper.checkPermissions {
             onMapReady()
         }
-        vehiclesBtn = findViewById(R.id.vehiclesBtn)
-        parkingBtn = findViewById(R.id.parkingBtn)
+        setupBtns()
     }
 
+    private fun vehiclesFetch() {
+        var geojson : GeoJson
+        val fetchJob = Job()
+        val errorHandler = CoroutineExceptionHandler {
+            coroutineContext, throwable ->
+            Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show()
+        }
+
+        val scope = CoroutineScope(fetchJob + Dispatchers.Main)
+        scope.launch(errorHandler) {
+            geojson = vehiclesFetcher.getVehicles()
+            print(geojson)
+        }
+        Toast.makeText(this@MainActivity, "Show Vehicles", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun setupBtns() {
+        vehiclesBtn = findViewById(R.id.vehiclesBtn)
+        parkingBtn = findViewById(R.id.parkingBtn)
+        vehiclesBtn.setOnClickListener(this)
+        parkingBtn.setOnClickListener(this)
+    }
+
+    // method to stylish the map
     private fun onMapReady() {
         mapView.getMapboxMap().setCamera(
             CameraOptions.Builder()
@@ -131,6 +136,27 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         mapView.gestures.removeOnMoveListener(onMoveListener)
     }
 
+    private val onIndicatorBearingChangedListener = OnIndicatorBearingChangedListener {
+        mapView.getMapboxMap().setCamera(CameraOptions.Builder().bearing(it).build())
+    }
+
+    private val onIndicatorPositionChangedListener = OnIndicatorPositionChangedListener {
+        mapView.getMapboxMap().setCamera(CameraOptions.Builder().center(it).build())
+        mapView.gestures.focalPoint = mapView.getMapboxMap().pixelForCoordinate(it)
+    }
+
+    private val onMoveListener = object : OnMoveListener {
+        override fun onMoveBegin(detector: MoveGestureDetector) {
+            onCameraTrackingDismissed()
+        }
+
+        override fun onMove(detector: MoveGestureDetector): Boolean {
+            return false
+        }
+
+        override fun onMoveEnd(detector: MoveGestureDetector) {}
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -143,8 +169,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     override fun onClick(v: View?) {
         if (v != null) {
             when (v.id) {
-                vehiclesBtn.id -> Toast.makeText(this@MainActivity, "button 1", Toast.LENGTH_SHORT).show()
-                parkingBtn.id -> Toast.makeText(this@MainActivity, "button 2", Toast.LENGTH_SHORT).show()
+                vehiclesBtn.id -> vehiclesFetch()
+                parkingBtn.id -> Toast.makeText(this@MainActivity, "Show Parking", Toast.LENGTH_SHORT).show()
             }
         }
     }

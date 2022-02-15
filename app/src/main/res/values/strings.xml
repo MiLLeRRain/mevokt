@@ -2,4 +2,6 @@
     <string name="app_name">mevokt</string>
     <string name="mapbox_access_token">pk.eyJ1IjoiYXBhbmciLCJhIjoiY2t6bWRtOXVmMm04NzJ1b2JybHVxdWNzciJ9.DN-gATyrK9vdklcDJd719g</string>
     <string name="mapbox_style_mapbox_streets">mapbox://styles/apang/ckzmebdqg002d14topq3lratj</string>
+    <string name="vehicles_api_url">https://api.mevo.co.nz/public/vehicles/wellington</string>
+    <string name="parking_api_url">https://api.mevo.co.nz/public/parking/wellington</string>
 </resources>
