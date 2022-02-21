@@ -56,7 +56,7 @@ class GeoJsonFetcher {
                 println("fail: $t")
             }
         })
-        call.cancel()
+//        call.cancel()
         return carsCollection
     }
 
@@ -80,7 +80,7 @@ class GeoJsonFetcher {
                 println("fail: $t")
             }
         })
-        call.cancel()
+//        call.cancel()
         return parkingCollection
     }
 
