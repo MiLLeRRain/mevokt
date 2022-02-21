@@ -1,16 +1,23 @@
 package com.example.mevokt
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Picture
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import com.example.mevokt.utils.GeoJsonFetcher
 import com.example.mevokt.utils.LocationPermissionHelper
+import com.google.gson.JsonObject
 import com.mapbox.android.gestures.MoveGestureDetector
+import com.mapbox.geojson.FeatureCollection
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
@@ -18,7 +25,9 @@ import com.mapbox.maps.extension.style.expressions.dsl.generated.interpolate
 import com.mapbox.maps.extension.style.layers.addLayer
 import com.mapbox.maps.extension.style.layers.generated.FillLayer
 import com.mapbox.maps.extension.style.layers.generated.lineLayer
+import com.mapbox.maps.extension.style.layers.generated.symbolLayer
 import com.mapbox.maps.extension.style.layers.getLayerAs
+import com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor
 import com.mapbox.maps.extension.style.sources.addSource
 import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
 import com.mapbox.maps.plugin.LocationPuck2D
@@ -28,6 +37,9 @@ import com.mapbox.maps.plugin.locationcomponent.OnIndicatorBearingChangedListene
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
 import com.mapbox.maps.plugin.locationcomponent.location
 import kotlinx.coroutines.*
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.lang.ref.WeakReference
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
@@ -49,23 +61,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             onMapReady()
         }
         setupBtns()
-    }
-
-    private fun vehiclesFetch() {
-        var vehiclesFetcher = GeoJsonFetcher()
-        var geojson : GeoJsonSource
-        val fetchJob = Job()
-        val errorHandler = CoroutineExceptionHandler {
-            coroutineContext, throwable ->
-            Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show()
-        }
-
-        val scope = CoroutineScope(fetchJob + Dispatchers.Main)
-        scope.launch(errorHandler) {
-//            geojson = vehiclesFetcher.getVehicles()
-//            Log.i("source", geojson.toString())
-        }
-        Toast.makeText(this@MainActivity, "Show Vehicles", Toast.LENGTH_SHORT).show()
     }
 
     private fun setupBtns() {
@@ -173,6 +168,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         locationPermissionHelper.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
+    @RequiresApi(Build.VERSION_CODES.P)
     override fun onClick(v: View?) {
         if (v != null) {
             when (v.id) {
@@ -180,6 +176,53 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 parkingBtn.id -> parkingFetch()
             }
         }
+    }
+
+//    private fun vehiclesFetch() {
+//        var vehiclesFetcher = GeoJsonFetcher()
+//        var call = vehiclesFetcher.getVehicles()
+//        val fetchJob = Job()
+//        val errorHandler = CoroutineExceptionHandler {
+//                coroutineContext, throwable ->
+//            Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show()
+//        }
+//
+//        val scope = CoroutineScope(fetchJob + Dispatchers.Main)
+//        scope.launch(errorHandler) {
+//            call.enqueue(object : Callback<JsonObject?> {
+//                override fun onResponse(call: Call<JsonObject?>, response: Response<JsonObject?>) {
+//                    if (response.isSuccessful) {
+//                        var carsCollections: FeatureCollection = FeatureCollection.fromJson(
+//                            response.body()?.get("data")
+//                                .toString())
+//                        println(carsCollections)
+//                    }
+//                    else {
+//                        println(response.errorBody())
+//                    }
+//                }
+//
+//                override fun onFailure(call: Call<JsonObject?>, t: Throwable) {
+//                    println("fail: $t")
+//                }
+//            })
+//        }
+//        Toast.makeText(this@MainActivity, "Show Vehicles", Toast.LENGTH_SHORT).show()
+//    }
+
+    @RequiresApi(Build.VERSION_CODES.P)
+    private fun vehiclesFetch() {
+        mapView.getMapboxMap().getStyle { style ->
+            style.addImage("vehicleIcon", BitmapFactory.decodeResource(resources, R.drawable.mevocar))
+            style.addSource(geoJsonSource("vehicles") {
+                url("https://api.mevo.co.nz/public/vehicles/wellington")
+            })
+            style.addLayer(symbolLayer("vehiclesLayer", "vehicles") {
+                iconImage("vehicleIcon")
+                iconAnchor(IconAnchor.BOTTOM)
+            })
+        }
+        Toast.makeText(this@MainActivity, "Show Vehicles", Toast.LENGTH_SHORT).show()
     }
 
     private fun parkingFetch() {

@@ -1,5 +1,7 @@
 package com.example.mevokt.utils
 import com.example.mevokt.R
+import com.google.gson.JsonObject
+import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.GeoJson
 import com.mapbox.geojson.gson.GeoJsonAdapterFactory
 import com.mapbox.geojson.gson.GeometryGeoJson
@@ -15,6 +17,6 @@ private const val PARKING_WELLINGTON : String = "parking/wellington"
 interface NetworkInterface {
 
     @GET(VEHICLES_WELLINGTON)
-    fun getVehicles(): Call<GeoJsonSource>
+    fun getVehicles(): Call<JsonObject>
 
 }

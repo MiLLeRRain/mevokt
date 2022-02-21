@@ -1,14 +1,13 @@
 package com.example.mevokt.utils
 
-import android.provider.Settings.System.getString
-import android.util.Log
-import com.example.mevokt.R
+import com.google.gson.JsonObject
+import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.GeoJson
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
 import retrofit2.Call
 import retrofit2.Callback
+import retrofit2.Response
 import retrofit2.Retrofit
-import retrofit2.await
 import retrofit2.converter.gson.GsonConverterFactory
 
 class GeoJsonFetcher {
@@ -28,7 +27,7 @@ class GeoJsonFetcher {
         networkInterface = retrofit.create(NetworkInterface::class.java)
     }
 
-    fun getVehicles() : Call<GeoJsonSource> {
+    fun getVehicles() : Call<JsonObject> {
         return networkInterface.getVehicles()
     }
 
@@ -36,6 +35,22 @@ class GeoJsonFetcher {
 
 suspend fun main() {
     var geoJson = GeoJsonFetcher();
-    var data = geoJson.getVehicles()
-    println(data.await())
+    var call = geoJson.getVehicles()
+    call.enqueue(object : Callback<JsonObject?> {
+        override fun onResponse(call: Call<JsonObject?>, response: Response<JsonObject?>) {
+            if (response.isSuccessful) {
+                var carsCollections: FeatureCollection = FeatureCollection.fromJson(
+                    response.body()?.get("data")
+                    .toString())
+                println(carsCollections)
+            }
+            else {
+                println(response.errorBody())
+            }
+        }
+
+        override fun onFailure(call: Call<JsonObject?>, t: Throwable) {
+            println("fail: $t")
+        }
+    })
 }
