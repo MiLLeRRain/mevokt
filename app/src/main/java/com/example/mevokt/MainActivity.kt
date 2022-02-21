@@ -62,8 +62,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
         val scope = CoroutineScope(fetchJob + Dispatchers.Main)
         scope.launch(errorHandler) {
-            geojson = vehiclesFetcher.getVehicles()
-            Log.i("source", geojson.toString())
+//            geojson = vehiclesFetcher.getVehicles()
+//            Log.i("source", geojson.toString())
         }
         Toast.makeText(this@MainActivity, "Show Vehicles", Toast.LENGTH_SHORT).show()
     }
