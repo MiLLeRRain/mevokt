@@ -19,4 +19,7 @@ interface NetworkInterface {
     @GET(VEHICLES_WELLINGTON)
     fun getVehicles(): Call<JsonObject>
 
+    @GET(PARKING_WELLINGTON)
+    fun getParking(): Call<JsonObject>
+
 }

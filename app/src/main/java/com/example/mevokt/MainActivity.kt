@@ -1,11 +1,8 @@
 package com.example.mevokt
 
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Picture
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.Toast
@@ -15,12 +12,12 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import com.example.mevokt.utils.GeoJsonFetcher
 import com.example.mevokt.utils.LocationPermissionHelper
-import com.google.gson.JsonObject
 import com.mapbox.android.gestures.MoveGestureDetector
+import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
-import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
+import com.mapbox.maps.Style
 import com.mapbox.maps.extension.style.expressions.dsl.generated.interpolate
 import com.mapbox.maps.extension.style.layers.addLayer
 import com.mapbox.maps.extension.style.layers.generated.FillLayer
@@ -37,9 +34,6 @@ import com.mapbox.maps.plugin.locationcomponent.OnIndicatorBearingChangedListene
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
 import com.mapbox.maps.plugin.locationcomponent.location
 import kotlinx.coroutines.*
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import java.lang.ref.WeakReference
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
@@ -82,6 +76,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         ) {
             initLocationComponent()
             setupGesturesListener()
+            vehiclesFetch(it)
+            parkingFetch(it)
         }
     }
 
@@ -172,82 +168,52 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     override fun onClick(v: View?) {
         if (v != null) {
             when (v.id) {
-                vehiclesBtn.id -> vehiclesFetch()
-                parkingBtn.id -> parkingFetch()
+//                vehiclesBtn.id -> vehiclesFetch(it)
+//                parkingBtn.id -> parkingFetch()
             }
         }
     }
 
-//    private fun vehiclesFetch() {
-//        var vehiclesFetcher = GeoJsonFetcher()
-//        var call = vehiclesFetcher.getVehicles()
-//        val fetchJob = Job()
-//        val errorHandler = CoroutineExceptionHandler {
-//                coroutineContext, throwable ->
-//            Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show()
-//        }
-//
-//        val scope = CoroutineScope(fetchJob + Dispatchers.Main)
-//        scope.launch(errorHandler) {
-//            call.enqueue(object : Callback<JsonObject?> {
-//                override fun onResponse(call: Call<JsonObject?>, response: Response<JsonObject?>) {
-//                    if (response.isSuccessful) {
-//                        var carsCollections: FeatureCollection = FeatureCollection.fromJson(
-//                            response.body()?.get("data")
-//                                .toString())
-//                        println(carsCollections)
-//                    }
-//                    else {
-//                        println(response.errorBody())
-//                    }
-//                }
-//
-//                override fun onFailure(call: Call<JsonObject?>, t: Throwable) {
-//                    println("fail: $t")
-//                }
-//            })
-//        }
-//        Toast.makeText(this@MainActivity, "Show Vehicles", Toast.LENGTH_SHORT).show()
-//    }
-
-    @RequiresApi(Build.VERSION_CODES.P)
-    private fun vehiclesFetch() {
-        mapView.getMapboxMap().getStyle { style ->
-            style.addImage("vehicleIcon", BitmapFactory.decodeResource(resources, R.drawable.mevocar))
-            style.addSource(geoJsonSource("vehicles") {
-                url("https://api.mevo.co.nz/public/vehicles/wellington")
-            })
-            style.addLayer(symbolLayer("vehiclesLayer", "vehicles") {
-                iconImage("vehicleIcon")
-                iconAnchor(IconAnchor.BOTTOM)
-            })
+    private fun vehiclesFetch(style: Style) {
+        val fetcher = GeoJsonFetcher()
+        style.addImage("vehicleIcon", BitmapFactory.decodeResource(resources, R.drawable.mevocar))
+        val carsCollection = fetcher.getCarsCollection()
+        val source = geoJsonSource("vehicles"){
+            data(carsCollection.toString())
         }
+        println(source)
+        style.addSource(source)
+        style.addLayer(symbolLayer("vehiclesLayer", "vehicles") {
+            iconImage("vehicleIcon")
+            iconAnchor(IconAnchor.BOTTOM)
+            iconAllowOverlap(true)
+        })
         Toast.makeText(this@MainActivity, "Show Vehicles", Toast.LENGTH_SHORT).show()
     }
 
-    private fun parkingFetch() {
-        mapView.getMapboxMap().getStyle { style ->
-
-
-            // Specify a unique string as the source ID (SOURCE_ID)
-            // and reference the location of source data
-            style.addSource(geoJsonSource("parkingArea") {
-                url("https://api.mevo.co.nz/public/parking/wellington")
-            })
-            // Specify a unique string as the layer ID (LAYER_ID)
-            // and reference the source ID (SOURCE_ID) added above.
-            style.addLayer(lineLayer("parkingLayer", "parkingArea") {
-                lineColor(ContextCompat.getColor(this@MainActivity, R.color.black))
-                lineWidth(3.0)
-                lineOpacity(0.5)
-            })
-
-
-            // Get an existing layer by referencing its
-            // unique layer ID (LAYER_ID)
-            // Update layer properties
-            style.getLayerAs<FillLayer>("parkingLayer")?.fillOpacity(0.5)
+    private fun parkingFetch(style: Style) {
+        val fetcher = GeoJsonFetcher()
+        val parkingFeature: Feature? = fetcher.getParkingFeature()
+        val source = geoJsonSource("parkingArea"){
+            data(parkingFeature.toString())
         }
+        // Specify a unique string as the source ID (SOURCE_ID)
+        // and reference the location of source data
+        style.addSource(source)
+        // Specify a unique string as the layer ID (LAYER_ID)
+        // and reference the source ID (SOURCE_ID) added above.
+        style.addLayer(lineLayer("parkingLayer", "parkingArea") {
+            lineColor(ContextCompat.getColor(this@MainActivity, R.color.black))
+            lineWidth(3.0)
+            lineOpacity(0.5)
+        })
+
+
+        // Get an existing layer by referencing its
+        // unique layer ID (LAYER_ID)
+        // Update layer properties
+        style.getLayerAs<FillLayer>("parkingLayer")?.fillOpacity(0.5)
+
         Toast.makeText(this@MainActivity, "Show Parking", Toast.LENGTH_SHORT).show()
     }
 }
