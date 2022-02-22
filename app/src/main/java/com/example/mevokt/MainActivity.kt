@@ -9,31 +9,19 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
-import androidx.core.content.ContextCompat
 import com.example.mevokt.utils.GeoJsonFetcher
 import com.example.mevokt.utils.LocationPermissionHelper
 import com.mapbox.android.gestures.MoveGestureDetector
-import com.mapbox.geojson.Feature
-import com.mapbox.geojson.FeatureCollection
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
 import com.mapbox.maps.Style
 import com.mapbox.maps.extension.style.expressions.dsl.generated.interpolate
-import com.mapbox.maps.extension.style.layers.addLayer
-import com.mapbox.maps.extension.style.layers.generated.FillLayer
-import com.mapbox.maps.extension.style.layers.generated.lineLayer
-import com.mapbox.maps.extension.style.layers.generated.symbolLayer
-import com.mapbox.maps.extension.style.layers.getLayerAs
-import com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor
-import com.mapbox.maps.extension.style.sources.addSource
-import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
 import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.gestures.OnMoveListener
 import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorBearingChangedListener
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
 import com.mapbox.maps.plugin.locationcomponent.location
-import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
@@ -175,45 +163,15 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun vehiclesFetch(style: Style) {
-        val fetcher = GeoJsonFetcher()
         style.addImage("vehicleIcon", BitmapFactory.decodeResource(resources, R.drawable.mevocar))
-        val carsCollection = fetcher.getCarsCollection()
-        val source = geoJsonSource("vehicles"){
-            data(carsCollection.toString())
-        }
-        println(source)
-        style.addSource(source)
-        style.addLayer(symbolLayer("vehiclesLayer", "vehicles") {
-            iconImage("vehicleIcon")
-            iconAnchor(IconAnchor.BOTTOM)
-            iconAllowOverlap(true)
-        })
+        val fetcher = GeoJsonFetcher()
+        fetcher.getCarsCollection(style)
         Toast.makeText(this@MainActivity, "Show Vehicles", Toast.LENGTH_SHORT).show()
     }
 
     private fun parkingFetch(style: Style) {
         val fetcher = GeoJsonFetcher()
-        val parkingFeature: Feature? = fetcher.getParkingFeature()
-        val source = geoJsonSource("parkingArea"){
-            data(parkingFeature.toString())
-        }
-        // Specify a unique string as the source ID (SOURCE_ID)
-        // and reference the location of source data
-        style.addSource(source)
-        // Specify a unique string as the layer ID (LAYER_ID)
-        // and reference the source ID (SOURCE_ID) added above.
-        style.addLayer(lineLayer("parkingLayer", "parkingArea") {
-            lineColor(ContextCompat.getColor(this@MainActivity, R.color.black))
-            lineWidth(3.0)
-            lineOpacity(0.5)
-        })
-
-
-        // Get an existing layer by referencing its
-        // unique layer ID (LAYER_ID)
-        // Update layer properties
-        style.getLayerAs<FillLayer>("parkingLayer")?.fillOpacity(0.5)
-
+        fetcher.getParkingFeature(style, this@MainActivity)
         Toast.makeText(this@MainActivity, "Show Parking", Toast.LENGTH_SHORT).show()
     }
 }
