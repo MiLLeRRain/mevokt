@@ -16,6 +16,7 @@ import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
 import com.mapbox.maps.Style
 import com.mapbox.maps.extension.style.expressions.dsl.generated.interpolate
+import com.mapbox.maps.extension.style.layers.getLayer
 import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.gestures.OnMoveListener
 import com.mapbox.maps.plugin.gestures.gestures
@@ -64,8 +65,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         ) {
             initLocationComponent()
             setupGesturesListener()
-            vehiclesFetch(it)
-            parkingFetch(it)
+//            vehiclesFetch(it)
+//            parkingFetch(it)
         }
     }
 
@@ -156,9 +157,30 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     override fun onClick(v: View?) {
         if (v != null) {
             when (v.id) {
-//                vehiclesBtn.id -> vehiclesFetch(it)
-//                parkingBtn.id -> parkingFetch()
+                vehiclesBtn.id -> toggleVehicles()
+                parkingBtn.id -> toggleParking()
             }
+        }
+    }
+
+    private fun toggleVehicles() {
+        mapView.getMapboxMap().getStyle() {
+            if (it.styleLayerExists("vehiclesLayer")) {
+                it.removeStyleLayer("vehiclesLayer")
+                it.removeStyleSource("vehicles")
+            }
+            else vehiclesFetch(it)
+        }
+    }
+
+    private fun toggleParking() {
+        mapView.getMapboxMap().getStyle() {
+            if (it.styleLayerExists("parkingLayer")) {
+                it.removeStyleLayer("parkingLayer")
+                it.removeStyleLayer("parkingLineLayer")
+                it.removeStyleSource("parkingArea")
+            }
+            else parkingFetch(it)
         }
     }
 

@@ -9,10 +9,13 @@ import com.google.gson.JsonObject
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.GeoJson
-import com.mapbox.mapboxsdk.style.layers.PropertyFactory.lineColor
-import com.mapbox.mapboxsdk.style.layers.PropertyFactory.lineWidth
+import com.mapbox.mapboxsdk.style.layers.PropertyFactory
+import com.mapbox.mapboxsdk.style.layers.PropertyFactory.*
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
 import com.mapbox.maps.Style
+import com.mapbox.maps.extension.style.expressions.dsl.generated.eq
+import com.mapbox.maps.extension.style.expressions.dsl.generated.interpolate
+import com.mapbox.maps.extension.style.expressions.dsl.generated.properties
 import com.mapbox.maps.extension.style.layers.addLayer
 import com.mapbox.maps.extension.style.layers.generated.FillLayer
 import com.mapbox.maps.extension.style.layers.generated.fillLayer
@@ -58,19 +61,23 @@ class GeoJsonFetcher {
         call.enqueue(object : Callback<JsonObject?> {
             override fun onResponse(call: Call<JsonObject?>, response: Response<JsonObject?>) {
                 if (response.isSuccessful) {
-                    val carsCollection = FeatureCollection.fromJson(
-                        response.body()?.get("data")
-                            .toString())
-                    val source = geoJsonSource("vehicles"){
-                        data(carsCollection.toJson())
+                    if (!style.styleSourceExists("vehicles")) {
+                        val carsCollection = FeatureCollection.fromJson(
+                            response.body()?.get("data")
+                                .toString())
+                        val source = geoJsonSource("vehicles"){
+                            data(carsCollection.toJson())
+                        }
+                        style.addSource(source)
                     }
-                    style.addSource(source)
-                    style.addLayer(symbolLayer("vehiclesLayer", "vehicles") {
-                        iconImage("vehicleIcon")
-                        iconAnchor(IconAnchor.BOTTOM)
-                        iconAllowOverlap(true)
-                        iconSize(0.2)
-                    })
+                    if (!style.styleLayerExists("vehiclesLayer")) {
+                        style.addLayer(symbolLayer("vehiclesLayer", "vehicles") {
+                            iconImage("vehicleIcon")
+                            iconAnchor(IconAnchor.BOTTOM)
+                            iconAllowOverlap(true)
+                            iconSize(0.2)
+                        })
+                    }
                 }
                 else {
                     println(response.errorBody())
@@ -88,22 +95,27 @@ class GeoJsonFetcher {
             @SuppressLint("ResourceAsColor")
             override fun onResponse(call: Call<JsonObject?>, response: Response<JsonObject?>) {
                 if (response.isSuccessful) {
-                    val parkingFeature = Feature.fromJson(
-                        response.body()?.get("data")
-                            .toString())
-                    val source = geoJsonSource("parkingArea"){
-                        data(parkingFeature.toJson())
+                    if (!style.styleSourceExists("parkingArea")) {
+                        val parkingFeature = Feature.fromJson(
+                            response.body()?.get("data")
+                                .toString()
+                        )
+                        val source = geoJsonSource("parkingArea") {
+                            data(parkingFeature.toJson())
+                        }
+                        style.addSource(source)
                     }
-                    style.addSource(source)
-                    style.addLayer(fillLayer("parkingLayer", "parkingArea") {
-                        fillColor(ContextCompat.getColor(mainActivity, R.color.mevo_primary))
-                        fillOpacity(0.5)
-                    })
-                    style.addLayer(lineLayer("parkingLineLayer", "parkingArea") {
-                        lineColor(ContextCompat.getColor(mainActivity, R.color.mevo_accent))
-                        lineWidth(3.0)
-                        lineOpacity(0.5)
-                    })
+                    if (!style.styleLayerExists("parkingLayer")) {
+                        style.addLayer(fillLayer("parkingLayer", "parkingArea") {
+                            fillColor(ContextCompat.getColor(mainActivity, R.color.mevo_primary))
+                            fillOpacity(0.1)
+                        })
+                        style.addLayer(lineLayer("parkingLineLayer", "parkingArea") {
+                            lineColor(ContextCompat.getColor(mainActivity, R.color.mevo_accent))
+                            lineWidth(3.0)
+                            lineOpacity(0.6)
+                        })
+                    }
                 }
                 else {
                     println(response.errorBody())
