@@ -101,24 +101,27 @@ class GeoJsonFetcher {
                             response.body()?.get("data")
                                 .toString()
                         )
-                        println(parkingFeature.geometry()?.javaClass)
                         val inner: Polygon = parkingFeature.geometry() as Polygon
                         inner.coordinates().removeAt(0)
-                        println(parkingFeature.geometry())
+                        println(parkingFeature.properties()?.get("stroke"))
                         val source = geoJsonSource("parkingArea") {
                             data(parkingFeature.toJson())
                         }
                         style.addSource(source)
-                    }
-                    if (!style.styleLayerExists("parkingLayer")) {
                         style.addLayer(fillLayer("parkingLayer", "parkingArea") {
                             fillColor(ContextCompat.getColor(mainActivity, R.color.mevo_primary))
-                            fillOpacity(0.1)
+                            parkingFeature.properties()?.get("fill-opacity")?.asDouble?.let {
+                                fillOpacity(it)
+                            }
                         })
                         style.addLayer(lineLayer("parkingLineLayer", "parkingArea") {
                             lineColor(ContextCompat.getColor(mainActivity, R.color.mevo_accent))
-                            lineWidth(3.0)
-                            lineOpacity(0.6)
+                            parkingFeature.properties()?.get("stroke-width")?.asDouble?.let {
+                                lineWidth(it)
+                            }
+                            parkingFeature.properties()?.get("stroke-opacity")?.asDouble?.let {
+                                lineOpacity(it)
+                            }
                         })
                     }
                 }
