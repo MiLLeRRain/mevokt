@@ -9,6 +9,7 @@ import com.google.gson.JsonObject
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.GeoJson
+import com.mapbox.geojson.Polygon
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.*
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
@@ -100,6 +101,10 @@ class GeoJsonFetcher {
                             response.body()?.get("data")
                                 .toString()
                         )
+                        println(parkingFeature.geometry()?.javaClass)
+                        val inner: Polygon = parkingFeature.geometry() as Polygon
+                        inner.coordinates().removeAt(0)
+                        println(parkingFeature.geometry())
                         val source = geoJsonSource("parkingArea") {
                             data(parkingFeature.toJson())
                         }
